@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export default function AuthBar({ onAuthChange }: { onAuthChange?: () => void }) {
+export default function AuthBar() {
   const [email, setEmail] = useState("")
   const [sending, setSending] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -19,13 +19,12 @@ export default function AuthBar({ onAuthChange }: { onAuthChange?: () => void })
     init()
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUserEmail(session?.user?.email ?? null)
-      onAuthChange?.()
     })
     return () => {
       mounted = false
       sub.subscription.unsubscribe()
     }
-  }, [onAuthChange])
+  }, [])
 
   const sendMagicLink = async () => {
     if (!email) return
@@ -73,4 +72,3 @@ export default function AuthBar({ onAuthChange }: { onAuthChange?: () => void })
     </div>
   )
 }
-

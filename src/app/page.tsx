@@ -21,9 +21,11 @@ export default function Page() {
       setUserId(data.user?.id)
     }
     init()
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setUserId(session?.user?.id)
-      setRefreshTick((t) => t + 1)
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setRefreshTick((t) => t + 1)
+      }
     })
     return () => {
       mounted = false
@@ -34,7 +36,7 @@ export default function Page() {
     <main className="min-h-dvh w-full py-10">
       <div className="container">
         <h1 className="mb-6 text-3xl font-bold tracking-tight">Journal</h1>
-        <AuthBar onAuthChange={() => setRefreshTick((t) => t + 1)} />
+        <AuthBar />
         <JournalForm onSaved={() => setRefreshTick((t) => t + 1)} userId={userId} />
 
         <section className="mt-10 mb-6">
