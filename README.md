@@ -60,9 +60,26 @@ Notes
 - Private bucket support: set NEXT_PUBLIC_PRIVATE_BUCKET=true and provide SUPABASE_SERVICE_ROLE_KEY. The client stores the storage path and the API at /api/storage/signed-url signs and returns a temporary URL for display.
 - Auth: Email magic link sign-in is provided (configure your Site URL and SMTP in Supabase). Entries are scoped per user via RLS.
 
+Tags support
+- Schema change (run in SQL editor):
+  alter table public.journal_entries add column if not exists tags text[] default '{}'::text[];
+- Insert/update: UI accepts comma-separated tags; stored as lowercased text[]
+- Filtering: Home page has a tag filter input (comma-separated) that matches entries containing all listed tags.
+
+Per-entry view
+- View in a modal: Clicking a card title opens a modal with image, tags, and content.
+- Edit page: /entries/[id]/edit provides editing with optional image replace/remove.
+
+RLS for updates (required for editing)
+- create policy "journal_update_own" on public.journal_entries
+  for update to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
 Delete entries
 - UI shows a Delete button per entry when signed in.
 - API: `/api/entries/delete` verifies ownership via RLS using your JWT, deletes the DB row, and best-effort removes the image from Storage using the service role key.
 - Add RLS delete policy:
   create policy "journal_delete_own" on public.journal_entries
     for delete to authenticated using (auth.uid() = user_id);
+# journal
