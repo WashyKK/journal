@@ -12,6 +12,11 @@ export default function Page() {
   const [imagesOnly, setImagesOnly] = useState(false)
   const [userId, setUserId] = useState<string | undefined>(undefined)
   const debouncedSearch = useDebounce(search, 350)
+  const [tagsFilterInput, setTagsFilterInput] = useState("")
+  const tagsFilter = tagsFilterInput
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
 
   useEffect(() => {
     let mounted = true
@@ -48,15 +53,24 @@ export default function Page() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full sm:w-2/3 rounded-md border px-3 py-2 text-sm"
             />
-            <label className="inline-flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-3">
               <input
-                type="checkbox"
-                checked={imagesOnly}
-                onChange={(e) => setImagesOnly(e.target.checked)}
-                className="h-4 w-4"
+                type="text"
+                placeholder="Filter tags (comma-separated)"
+                value={tagsFilterInput}
+                onChange={(e) => setTagsFilterInput(e.target.value)}
+                className="w-64 rounded-md border px-3 py-2 text-sm"
               />
-              Images only
-            </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={imagesOnly}
+                  onChange={(e) => setImagesOnly(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                Images only
+              </label>
+            </div>
           </div>
         </section>
 
@@ -66,6 +80,7 @@ export default function Page() {
             query={debouncedSearch}
             imagesOnly={imagesOnly}
             userId={userId}
+            tagsFilter={tagsFilter}
           />
         ) : (
           <p className="mt-10 text-sm text-muted-foreground">Sign in to view your entries.</p>

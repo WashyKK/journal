@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { IS_PRIVATE_BUCKET, JOURNAL_BUCKET, supabase } from "@/lib/supabase"
 import { Trash2 } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
 
 type Entry = {
   id: string
@@ -10,6 +11,7 @@ type Entry = {
   title: string
   content: string
   image_url: string | null
+  tags: string[] | null
 }
 
 export default function RecentEntries({
@@ -18,12 +20,14 @@ export default function RecentEntries({
   query = "",
   imagesOnly = false,
   userId,
+  tagsFilter = [],
 }: {
   refreshKey?: number
   pageSize?: number
   query?: string
   imagesOnly?: boolean
   userId?: string
+  tagsFilter?: string[]
 }) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,11 +37,14 @@ export default function RecentEntries({
   const offsetRef = useRef(0)
   const [urlMap, setUrlMap] = useState<Record<string, string>>({})
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewId, setViewId] = useState<string | null>(null)
+  const viewed = entries.find((e) => e.id === viewId) || null
+  const viewedUrl = (viewed && (urlMap[viewed.id] || viewed.image_url)) || null
 
   const baseQuery = () => {
     let q = supabase
       .from("journal_entries")
-      .select("id, created_at, title, content, image_url", { count: "exact" })
+      .select("id, created_at, title, content, image_url, tags", { count: "exact" })
       .order("created_at", { ascending: false })
 
     if (query.trim()) {
@@ -54,6 +61,9 @@ export default function RecentEntries({
     }
     if (userId) {
       q = q.eq("user_id", userId)
+    }
+    if (tagsFilter && tagsFilter.length) {
+      q = q.contains("tags", tagsFilter.map((t) => t.toLowerCase()))
     }
     return q
   }
@@ -200,12 +210,21 @@ export default function RecentEntries({
               )}
               <CardContent className="pt-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-semibold truncate">{e.title || "Untitled"}</h3>
+                  <button onClick={() => setViewId(e.id)} className="font-semibold truncate hover:underline text-left">{e.title || "Untitled"}</button>
                   <span className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString()}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground overflow-hidden text-ellipsis">
                   {e.content}
                 </p>
+                {e.tags && e.tags.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {e.tags.map((t) => (
+                      <span key={t} className="inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 {userId && (
                   <div className="mt-3 flex justify-end">
                     <button
@@ -233,9 +252,51 @@ export default function RecentEntries({
             </button>
           )}
         </div>
+        <Modal
+          open={!!viewId}
+          onOpenChange={(o) => !o && setViewId(null)}
+          title={viewed ? viewed.title || "Untitled" : "Entry"}
+        >
+          {!viewed ? (
+            <div className="h-48 w-full animate-pulse rounded-md bg-muted" />
+          ) : (
+            <div className="space-y-4">
+              {viewed.image_url ? (
+                <img
+                  src={viewedUrl || undefined}
+                  alt={viewed.title || "image"}
+                  className="w-full max-h-[60vh] rounded-md object-contain"
+                />
+              ) : null}
+              {viewed.tags && viewed.tags.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {viewed.tags.map((t) => (
+                    <span key={t} className="inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="whitespace-pre-wrap text-sm leading-6">{viewed.content}</div>
+              <div className="flex justify-end gap-2">
+                {userId && (
+                  <a
+                    className="inline-flex rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+                    href={`/entries/${viewed.id}/edit`}
+                  >
+                    Edit
+                  </a>
+                )}
+                <button className="inline-flex rounded-md border px-3 py-1.5 text-sm" onClick={() => setViewId(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
       </>
     )
-  }, [loading, error, entries, hasMore, loadingMore])
+  }, [loading, error, entries, hasMore, loadingMore, viewId, urlMap, userId, deletingId])
 
   return (
     <section className="mt-10">

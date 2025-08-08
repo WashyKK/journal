@@ -12,6 +12,7 @@ type JournalEntry = {
   title: string
   content: string
   image_url?: string | null
+  tags?: string[] | null
 }
 
 export default function JournalForm({ onSaved, userId }: { onSaved?: () => void; userId?: string }) {
@@ -19,6 +20,7 @@ export default function JournalForm({ onSaved, userId }: { onSaved?: () => void;
   const [content, setContent] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [tagsInput, setTagsInput] = useState("")
 
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
 
@@ -31,6 +33,7 @@ export default function JournalForm({ onSaved, userId }: { onSaved?: () => void;
     setTitle("")
     setContent("")
     setFile(null)
+    setTagsInput("")
   }
 
   const handleSubmit = useCallback(async () => {
@@ -62,10 +65,19 @@ export default function JournalForm({ onSaved, userId }: { onSaved?: () => void;
         }
       }
 
+      const parsedTags = tagsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .map((t) => t.toLowerCase())
+
+      const uniqueTags = Array.from(new Set(parsedTags))
+
       const payload: JournalEntry = {
         title: title.trim(),
         content: content.trim(),
         image_url: publicUrl,
+        tags: uniqueTags.length ? uniqueTags : null,
       }
 
       const row: any = { ...payload }
@@ -97,6 +109,18 @@ export default function JournalForm({ onSaved, userId }: { onSaved?: () => void;
         <div className="grid gap-2">
           <Label htmlFor="content">Content</Label>
           <Textarea id="content" rows={6} placeholder="Write your thoughts..." value={content} onChange={(e) => setContent(e.target.value)} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="tags">Tags</Label>
+          <Input
+            id="tags"
+            placeholder="Comma-separated e.g. travel, mood, work"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+          />
+          {tagsInput.trim() && (
+            <div className="text-xs text-muted-foreground">Parsed: {tagsInput.split(",").map((t) => t.trim()).filter(Boolean).join(", ")}</div>
+          )}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="image">Image</Label>
