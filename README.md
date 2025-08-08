@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Journal UI (Next.js + shadcn + Supabase)
 
-## Getting Started
+What this is
+- Next.js 14 + TypeScript app scaffolded manually (no generator).
+- Tailwind and shadcn-style UI primitives (Button, Input, Textarea, Label, Card).
+- A simple Journal form to save text and an optional image to Supabase Storage + row in a journal_entries table.
 
-First, run the development server:
+Quick start
+1) Install deps
+   npm install
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2) Configure Supabase env vars
+   - Copy .env.example to .env.local and set:
+     NEXT_PUBLIC_SUPABASE_URL
+     NEXT_PUBLIC_SUPABASE_ANON_KEY
+     NEXT_PUBLIC_SUPABASE_BUCKET (defaults to journal-images)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3) Create Supabase resources
+   - Storage bucket:
+     Name: journal-images (or your custom name). You can make it public OR private.
+   - SQL table:
+     create extension if not exists pgcrypto;
+     create table if not exists public.journal_entries (
+       id uuid primary key default gen_random_uuid(),
+       created_at timestamptz not null default now(),
+       user_id uuid references auth.users(id) on delete cascade,
+       title text not null default '',
+       content text not null default '',
+       -- image_url stores either a public URL (if public bucket) or a storage path (e.g. 171234-file.jpg) if private bucket
+       image_url text
+     );
+     alter table public.journal_entries enable row level security;
+     -- RLS policies (per-user isolation)
+     create policy "journal_insert_own" on public.journal_entries
+       for insert to authenticated
+       with check (auth.uid() = user_id);
+     create policy "journal_select_own" on public.journal_entries
+       for select to authenticated
+       using (auth.uid() = user_id);
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+     -- If you want to test without auth, you can also add a permissive policy for anon (not recommended for production):
+     -- create policy "journal_select_anon" on public.journal_entries for select to anon using (true);
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   - Storage policies:
+     If PUBLIC bucket:
+       - Make bucket public in dashboard; uploads can be allowed to authenticated with write policy.
+     If PRIVATE bucket:
+       - Keep bucket private. Allow authenticated users to upload to the bucket:
+         -- Example: create policy "storage_upload_authenticated" on storage.objects
+         -- for insert to authenticated with check ( bucket_id = 'journal-images' );
+       - The app will store the object path in DB and request a short-lived signed URL from the server route when rendering.
 
-## Learn More
+4) Run the app
+   npm run dev
+   Open http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+Notes
+- Client code uploads the image to Supabase Storage then inserts the row.
+- Bucket name comes from NEXT_PUBLIC_SUPABASE_BUCKET.
+- Private bucket support: set NEXT_PUBLIC_PRIVATE_BUCKET=true and provide SUPABASE_SERVICE_ROLE_KEY. The client stores the storage path and the API at /api/storage/signed-url signs and returns a temporary URL for display.
+- Auth: Email magic link sign-in is provided (configure your Site URL and SMTP in Supabase). Entries are scoped per user via RLS.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Delete entries
+- UI shows a Delete button per entry when signed in.
+- API: `/api/entries/delete` verifies ownership via RLS using your JWT, deletes the DB row, and best-effort removes the image from Storage using the service role key.
+- Add RLS delete policy:
+  create policy "journal_delete_own" on public.journal_entries
+    for delete to authenticated using (auth.uid() = user_id);
