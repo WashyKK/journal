@@ -40,7 +40,7 @@ export default function Page() {
   return (
     <main className="min-h-dvh w-full py-10">
       <div className="container">
-        <h1 className="mb-6 text-3xl font-bold tracking-tight">Journal</h1>
+        <h1 className="mb-6 text-3xl font-extrabold tracking-tight bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Journal</h1>
         <AuthBar />
         <JournalForm onSaved={() => setRefreshTick((t) => t + 1)} userId={userId} />
 
@@ -51,7 +51,7 @@ export default function Page() {
               placeholder="Search title or content..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-2/3 rounded-md border px-3 py-2 text-sm"
+              className="w-full sm:w-2/3 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60"
             />
             <div className="flex items-center gap-3">
               <input
@@ -59,14 +59,14 @@ export default function Page() {
                 placeholder="Filter tags (comma-separated)"
                 value={tagsFilterInput}
                 onChange={(e) => setTagsFilterInput(e.target.value)}
-                className="w-64 rounded-md border px-3 py-2 text-sm"
+                className="w-64 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60"
               />
               <label className="inline-flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={imagesOnly}
                   onChange={(e) => setImagesOnly(e.target.checked)}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-violet-500"
                 />
                 Images only
               </label>

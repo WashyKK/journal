@@ -219,7 +219,7 @@ export default function RecentEntries({
                 {e.tags && e.tags.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {e.tags.map((t) => (
-                      <span key={t} className="inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span key={t} className="inline-flex rounded-md border border-transparent bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-accent-foreground">
                         {t}
                       </span>
                     ))}
@@ -271,7 +271,7 @@ export default function RecentEntries({
               {viewed.tags && viewed.tags.length ? (
                 <div className="flex flex-wrap gap-2">
                   {viewed.tags.map((t) => (
-                    <span key={t} className="inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <span key={t} className="inline-flex rounded-md border border-transparent bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-accent-foreground">
                       {t}
                     </span>
                   ))}
@@ -300,7 +300,7 @@ export default function RecentEntries({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 text-xl font-semibold">Recent entries</h2>
+      <h2 className="mb-4 text-xl font-semibold text-primary">Recent entries</h2>
       {grid}
     </section>
   )
