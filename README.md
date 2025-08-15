@@ -10,7 +10,7 @@ Quick start
    npm install
 
 2) Configure Supabase env vars
-   - Copy .env.example to .env.local and set:
+   - Copy .env.example to .env and set:
      NEXT_PUBLIC_SUPABASE_URL
      NEXT_PUBLIC_SUPABASE_ANON_KEY
      NEXT_PUBLIC_SUPABASE_BUCKET (defaults to journal-images)

@@ -22,8 +22,9 @@
       ]
     },
     "types": [
-      "react/next",
-      "react-dom/next"
+      "react",
+      "react-dom",
+      "node"
     ],
     "incremental": true,
     "isolatedModules": true,
